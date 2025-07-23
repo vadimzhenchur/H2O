@@ -10,7 +10,7 @@ WIDTH = 1000
 HEIGHT = 600
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect (("2.tcp.eu.ngrok.io", 15132))
+client.connect (("4.tcp.eu.ngrok.io", 16761))
 
 player_id = client.recv(1024).decode()
 other_players_data = {}
@@ -77,7 +77,7 @@ pygame.init()
 window = pygame.display.set_mode([WIDTH, HEIGHT])
 clock = pygame.time.Clock()
 
-andriy = Player(WIDTH // 2, HEIGHT // 2, 50, [42, 75, 255], 10, "Любомир")
+andriy = Player(WIDTH // 2, HEIGHT // 2, 50, [42, 75, 255], 50, "синік")
 
 foods = []
 for i in range(300):
@@ -93,6 +93,8 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
     scale = max(0.3, min(60 / andriy.size, 1.5))
+
+
 
     for food in foods:
         if andriy.hitbox.colliderect(food.hitbox):
@@ -116,19 +118,33 @@ while True:
             })
 
 
-            client.send(player_data.encode())
+            client.send((player_data + "\n").encode())
             last_send_time = time.time()
         except Exception as e:
             print(str(e))
 
+
+    tops =[{'name':andriy.name, 'size': andriy.size}]
+
     for pid, pdata in other_players_data.items():
-        draw_x = int((pdata["x"] - andriy.x) * scale + WIDTH // 2)
-        draw_y = int((pdata["y"] - andriy.y) * scale + HEIGHT // 2)
-        size = pdata["size"] * scale
-        pygame.draw.rect(window, pdata["color"], pygame.Rect(draw_x, draw_y, size, size))
-        print(player_data)
+        if pdata["name"] != andriy.name:
+            draw_x = int((pdata["x"] - andriy.x) * scale + WIDTH // 2)
+            draw_y = int((pdata["y"] - andriy.y) * scale + HEIGHT // 2)
+            size = pdata["size"] * scale
+            pygame.draw.rect(window, pdata["color"], pygame.Rect(draw_x, draw_y, size, size))
+            print(player_data)
+            tops.append({'name': pdata})
 
+    y = 0
+    for player in tops:
+        player_text= pygame.font.Font(None, 20)\
+            .render(f"{player['name']}: {player['size']}", True, [0, 0, 0])
+        window.blit(player_text, (0, y))
+        y += 20
 
+    for pid, pdata in other_players_data.items():
+        if pdata["name"] == andriy.name and pdata.get("die"):
+            exit()
 
     for food in foods:
         food.draw(window, andriy.x, andriy.y, scale)
